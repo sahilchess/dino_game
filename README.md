@@ -1,0 +1,4 @@
+# dino game
+
+hardware + software
+
