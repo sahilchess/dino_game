@@ -105,3 +105,54 @@ void showGameOver() {
   lcd.print(score);
 }
 
+void setup() {
+  Serial.begin(115200);
+  pinMode(jumpButtonPin, INPUT_PULLUP);
+
+  lcd.begin(lcd_columns, 2);
+  lcd.createChar(dino_glyph, dinoGlyphData);
+  lcd.createChar(cactus_glyph, cactusGlyphData);
+  lcd.setCursor(0, 0);
+  lcd.print("Start Game?");
+  lcd.setCursor(0, 1);
+  lcd.print("click to start");
+}
+
+void loop() {
+  bool jump_pressed = jumpButtonWasPressed();
+
+  if (!gameIsRunning) {
+    if (jump_pressed) {
+      start_round();
+    }
+    return;
+  }
+
+  unsigned long now = millis();
+  if (jump_pressed && !dinoIsJumping) {
+    dinoIsJumping = true;
+    jumpStartedAt = now;
+  }
+
+  if (dinoIsJumping && now - jumpStartedAt >= jumpDurationMs) {
+    dinoIsJumping = false;
+  }
+
+  unsigned long cactusStepMs = max(130UL, 350UL - min(score, 20) * 10UL);
+  if (now - cactusMovedAt >= cactusStepMs) {
+    cactusMovedAt = now;
+    cactus_column--;
+
+    if (cactus_column < 0) {
+      cactus_column = lcd_columns - 1;
+      score++;
+    }
+
+    if (cactus_column == dino_column && !dinoIsJumping) {
+      showGameOver();
+      return;
+    }
+
+    draw_playfield();
+  }
+}
